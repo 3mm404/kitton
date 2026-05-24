@@ -1,18 +1,18 @@
 import 'package:get/get.dart';
 
-import 'kitton_module.dart';
+import 'kitton_register.dart';
 
 class KittonBinding extends Bindings {
-  final List<KittonModule> modules;
+  final List<KittonRegister> registers;
 
   KittonBinding({
-    required this.modules,
+    required this.registers,
   });
 
   @override
   void dependencies() {
-    for (final module in modules) {
-      module.register();
+    for (final register in registers) {
+      register.register();
     }
   }
 }

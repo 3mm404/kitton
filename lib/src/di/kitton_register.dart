@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 
-abstract class KittonModule {
+abstract class KittonRegister {
   T find<T>() => Get.find<T>();
 
   void bind<T>(T Function() builder) {
