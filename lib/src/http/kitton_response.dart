@@ -3,21 +3,21 @@ class KittonResponse {
 
   KittonResponse(this.raw);
 
-  Map<String, dynamic> get body {
+  dynamic get body {
     final data = raw;
 
     if (data is Map<String, dynamic>) {
-      final innerData = data['data'];
-
-      if (innerData is Map<String, dynamic>) {
-        return innerData;
+      if (data.containsKey('data')) {
+        return data['data'];
       }
 
       return data;
     }
 
-    throw FormatException(
-      'Expected Map<String, dynamic>, got ${data.runtimeType}',
-    );
+    if (data is List) {
+      return data;
+    }
+
+    throw FormatException('Expected Map or List, got ${data.runtimeType}');
   }
 }

@@ -15,14 +15,29 @@ class KittonApi {
     required T Function(Map<String, dynamic>) model,
   }) async {
     try {
-      final response = await client.get(
-        path,
-        queryParameters: queryParameters,
-      );
+      final response = await client.get(path, queryParameters: queryParameters);
 
       final body = KittonResponse(response.data).body;
 
       return model(body);
+    } catch (error) {
+      throw KittonException.from(error);
+    }
+  }
+
+  Future<List<T>> getList<T extends Kitton>(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+    required T Function(Map<String, dynamic>) model,
+  }) async {
+    try {
+      final response = await client.get(path, queryParameters: queryParameters);
+
+      final body = KittonResponse(response.data).body;
+
+      final list = body as List;
+
+      return list.map((item) => model(item as Map<String, dynamic>)).toList();
     } catch (error) {
       throw KittonException.from(error);
     }
@@ -34,10 +49,7 @@ class KittonApi {
     required T Function(Map<String, dynamic>) model,
   }) async {
     try {
-      final response = await client.post(
-        path,
-        data: data,
-      );
+      final response = await client.post(path, data: data);
 
       final body = KittonResponse(response.data).body;
 
@@ -47,15 +59,9 @@ class KittonApi {
     }
   }
 
-  Future<void> postVoid(
-    String path, {
-    Map<String, dynamic>? data,
-  }) async {
+  Future<void> postVoid(String path, {Map<String, dynamic>? data}) async {
     try {
-      await client.post(
-        path,
-        data: data,
-      );
+      await client.post(path, data: data);
     } catch (error) {
       throw KittonException.from(error);
     }

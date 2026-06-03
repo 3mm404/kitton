@@ -43,19 +43,10 @@ void main() {
       'name': 'Christian',
       'email': 'christian@mail.com',
       'active': 1,
-      'wallet': {
-        'balance': '250.50',
-        'reserved': 40,
-      },
+      'wallet': {'balance': '250.50', 'reserved': 40},
       'addresses': [
-        {
-          'city': 'Playa del Carmen',
-          'country': 'Mexico',
-        },
-        {
-          'city': 'Cancun',
-          'country': 'Mexico',
-        },
+        {'city': 'Playa del Carmen', 'country': 'Mexico'},
+        {'city': 'Cancun', 'country': 'Mexico'},
       ],
     });
 
@@ -96,10 +87,7 @@ void main() {
     print('──────────────────────────────────────');
     print('');
 
-    expect(user.toJson(), {
-      'name': 'Christian',
-      'email': 'christian@mail.com',
-    });
+    expect(user.toJson(), {'name': 'Christian', 'email': 'christian@mail.com'});
   });
 
   test('Kitton can filter request data', () {
@@ -118,10 +106,6 @@ void main() {
     print('─────────────────────────────────────');
     print('');
 
-    expect(loginData, {
-      'email': 'christian@mail.com',
-      'password': 'secret',
-    });
+    expect(loginData, {'email': 'christian@mail.com', 'password': 'secret'});
   });
 }
-
