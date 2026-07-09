@@ -1,29 +1,161 @@
----
+# Kitton
 
-# Request Models
+**Kitton** is a lightweight model layer for Dart and Flutter that simplifies working with REST APIs.
 
-`Kitton` and `KittonRequest` serve different purposes.
+Instead of manually parsing `Map<String, dynamic>` objects, Kitton lets you define strongly typed request and response models using plain Dart.
 
-While `Kitton` is designed to represent **data received from an API**, `KittonRequest` is intended for **data being sent to an API**.
+No code generation.
 
-Keeping requests and responses separate makes your application easier to understand, maintain, and extend.
+No annotations.
 
-| Kitton | KittonRequest |
-|---------|---------------|
-| Represents API responses | Represents API requests |
-| Supports serialization filters (`hidden` / `visible`) | Sends the payload exactly as provided |
-| Recursively serializes nested models | Returns the raw request payload |
-| Optimized for reading data | Optimized for writing data |
+No reflection.
+
+Just models.
 
 ---
 
-## Creating a Request
+## Features
 
-Create a request model by extending `KittonRequest`.
+- ✅ Strongly typed models
+- ✅ Typed value readers (`string`, `integer`, `boolean`, `date`, etc.)
+- ✅ Automatic type coercion
+- ✅ Nested model parsing
+- ✅ Nullable nested models
+- ✅ Collections of models
+- ✅ Recursive JSON serialization
+- ✅ Hidden & visible serialization
+- ✅ Request models
+- ✅ Utility helpers
+- ✅ Zero code generation
+
+---
+
+# Installation
+
+```yaml
+dependencies:
+  kitton: ^0.1.0
+```
+
+or
+
+```yaml
+dependencies:
+  kitton:
+    path: ../kitton
+```
+
+---
+
+# Why Kitton?
+
+Without Kitton:
 
 ```dart
+final response = await dio.get('/profile');
+
+final name = response.data['name'];
+final email = response.data['email'];
+final active = response.data['active'];
+```
+
+With Kitton:
+
+```dart
+final response = await dio.get('/profile');
+
+final user = User(response.data);
+
+print(user.name);
+print(user.email);
+print(user.active);
+```
+
+No manual casting.
+
+No `fromJson()`.
+
+No repetitive code.
+
+---
+
+# Core Concepts
+
+Kitton separates **requests** from **responses**.
+
+```
+API Request
+      │
+      ▼
+KittonRequest
+      │
+      ▼
+HTTP Client
+      │
+      ▼
+REST API
+      │
+      ▼
+JSON Response
+      │
+      ▼
+Kitton
+```
+
+Use:
+
+- **KittonRequest** for data sent to an API.
+- **Kitton** for data received from an API.
+
+---
+
+# Creating Response Models
+
+Response models extend `Kitton`.
+
+```dart
+import 'package:kitton/kitton.dart';
+
+class User extends Kitton {
+  User(super.data);
+
+  int get id => integer('id');
+
+  String get name => string('name');
+
+  String get email => string('email');
+
+  bool get active => boolean('active');
+}
+```
+
+Usage:
+
+```dart
+final response = await dio.get('/profile');
+
+final user = User(response.data);
+
+print(user.name);
+```
+
+---
+
+# Creating Request Models
+
+Request models extend `KittonRequest`.
+
+```dart
+import 'package:kitton/kitton.dart';
+
 class LoginRequest extends KittonRequest {
-  LoginRequest(super.data);
+  LoginRequest({
+    required String email,
+    required String password,
+  }) : super({
+          'email': email,
+          'password': password,
+        });
 
   String get email => string('email');
 
@@ -31,44 +163,225 @@ class LoginRequest extends KittonRequest {
 }
 ```
 
-Create an instance:
+Usage:
 
 ```dart
-final request = LoginRequest({
-  'email': 'john@example.com',
-  'password': 'secret',
-});
-```
+final request = LoginRequest(
+  email: 'john@example.com',
+  password: 'secret',
+);
 
-Send it with your HTTP client:
-
-```dart
-await api.post(
+await dio.post(
   '/login',
   data: request.toJson(),
 );
 ```
 
-Produces:
+---
 
-```json
-{
-  "email": "john@example.com",
-  "password": "secret"
+## More Request Examples
+
+### Forgot Password
+
+```dart
+class ForgotPasswordRequest extends KittonRequest {
+  ForgotPasswordRequest({
+    required String email,
+  }) : super({
+          'email': email,
+        });
+
+  String get email => string('email');
+}
+```
+
+Usage:
+
+```dart
+final request = ForgotPasswordRequest(
+  email: 'john@example.com',
+);
+
+await dio.post(
+  '/forgot-password',
+  data: request.toJson(),
+);
+```
+
+---
+
+### OTP Verification
+
+```dart
+class OtpRequest extends KittonRequest {
+  OtpRequest({
+    required String email,
+    required int otpCode,
+  }) : super({
+          'email': email,
+          'otp_code': otpCode,
+        });
+
+  String get email => string('email');
+
+  int get otpCode => integer('otp_code');
+}
+```
+
+Usage:
+
+```dart
+final request = OtpRequest(
+  email: 'john@example.com',
+  otpCode: 123456,
+);
+
+await dio.post(
+  '/verify-otp',
+  data: request.toJson(),
+);
+```
+
+---
+
+### Update Profile
+
+```dart
+class UpdateProfileRequest extends KittonRequest {
+  UpdateProfileRequest({
+    required String name,
+    required String avatar,
+    required String phoneNumber,
+    required String dateOfBirth,
+  }) : super({
+          'name': name,
+          'avatar': avatar,
+          'phone_number': phoneNumber,
+          'date_of_birth': dateOfBirth,
+        });
+
+  String get name => string('name');
+
+  String get avatar => string('avatar');
+
+  String get phoneNumber => string('phone_number');
+
+  String get dateOfBirth => string('date_of_birth');
+}
+```
+
+Usage:
+
+```dart
+final request = UpdateProfileRequest(
+  name: 'Christian',
+  avatar: 'avatar.png',
+  phoneNumber: '+521999999999',
+  dateOfBirth: '1998-04-15',
+);
+
+await dio.post(
+  '/profile',
+  data: request.toJson(),
+);
+```
+
+---
+
+# Typed Readers
+
+Kitton provides strongly typed readers with automatic type conversion.
+
+| Method | Returns |
+|----------|----------|
+| `string()` | String |
+| `str()` | String |
+| `integer()` | int |
+| `intValue()` | int |
+| `decimal()` | double |
+| `doubleValue()` | double |
+| `numValue()` | num |
+| `boolean()` | bool |
+| `boolValue()` | bool |
+| `date()` | DateTime? |
+| `dateOr()` | DateTime |
+| `map()` | Map<String, dynamic> |
+| `list()` | List<dynamic> |
+| `stringList()` | List<String> |
+| `intList()` | List<int> |
+
+Example:
+
+```dart
+class User extends Kitton {
+  User(super.data);
+
+  int get age => integer('age');
+
+  bool get verified => boolean('verified');
+
+  DateTime? get birthday => date('birthday');
 }
 ```
 
 ---
 
-## Response Models
+# Nested Models
 
-Responses should extend `Kitton`.
+### Single Model
 
 ```dart
-class LoginResponse extends Kitton {
-  LoginResponse(super.data);
+class Order extends Kitton {
+  Order(super.data);
 
-  String get token => string('token');
+  User get customer => model(
+    'customer',
+    User.new,
+  );
+}
+```
+
+---
+
+### Nullable Model
+
+```dart
+User? get customer => nullableModel(
+  'customer',
+  User.new,
+);
+```
+
+---
+
+### List of Models
+
+```dart
+class Cart extends Kitton {
+  Cart(super.data);
+
+  List<Product> get products => models(
+    'products',
+    Product.new,
+  );
+}
+```
+
+---
+
+# Serialization
+
+Kitton automatically serializes nested objects recursively.
+
+```dart
+final json = user.toJson();
+```
+
+Nested models:
+
+```dart
+class Order extends Kitton {
+  Order(super.data);
 
   User get user => model(
     'user',
@@ -77,22 +390,38 @@ class LoginResponse extends Kitton {
 }
 ```
 
-Usage:
+Produces:
+
+```json
+{
+  "user": {
+    "id": 1,
+    "name": "John"
+  }
+}
+```
+
+Lists are serialized automatically.
+
+Maps are serialized automatically.
+
+Nested `Kitton` objects are serialized automatically.
+
+---
+
+# Raw Serialization
+
+Return the original model without applying serialization filters.
 
 ```dart
-final response = await api.post(
-  '/login',
-  model: LoginResponse.new,
-);
-
-print(response.user.name);
+final json = user.toRawJson();
 ```
 
 ---
 
-## Serialization Differences
+# Hidden Fields
 
-`Kitton` applies serialization rules such as `hidden` and `visible` when calling `toJson()`.
+Hide attributes during serialization.
 
 ```dart
 class User extends Kitton {
@@ -101,7 +430,7 @@ class User extends Kitton {
   @override
   List<String> get hidden => [
     'password',
-    'remember_token',
+    'token',
   ];
 }
 ```
@@ -110,7 +439,7 @@ class User extends Kitton {
 user.toJson();
 ```
 
-Produces:
+Result:
 
 ```json
 {
@@ -119,58 +448,126 @@ Produces:
 }
 ```
 
-In contrast, `KittonRequest` always returns the original payload.
+---
+
+# Visible Fields
+
+Serialize only selected fields.
 
 ```dart
-abstract class KittonRequest extends Kitton {
-  KittonRequest(super.data);
-
-  @override
-  Map<String, dynamic> toJson() {
-    return data;
-  }
-}
+@override
+List<String> get visible => [
+  'id',
+  'name',
+  'email',
+];
 ```
-
-Calling:
-
-```dart
-request.toJson();
-```
-
-Always returns:
-
-```json
-{
-  "email": "john@example.com",
-  "password": "secret"
-}
-```
-
-No filtering is applied.
-
-No fields are hidden.
-
-The payload is sent exactly as it was created.
 
 ---
 
-## Recommended Usage
+# Utility Methods
+
+```dart
+user.has('email');
+
+user.missing('password');
+
+user.get('email');
+
+user.attr('email');
+
+user.only(['id', 'name']);
+
+user.except(['password']);
+
+user.fill(['id', 'name']);
+
+user.merge({
+  'role': 'admin',
+});
+
+user.isEmpty;
+
+user.isNotEmpty;
+```
+
+---
+
+# Complete Example
+
+```dart
+final request = LoginRequest(
+  email: 'john@example.com',
+  password: 'secret',
+);
+
+final response = await dio.post(
+  '/login',
+  data: request.toJson(),
+);
+
+final login = LoginResponse(response.data);
+
+print(login.user.name);
+print(login.token);
+```
+
+The complete flow looks like this:
 
 ```
-HTTP Request
-        │
-        ▼
- LoginRequest (KittonRequest)
-        │
-        ▼
-     API Call
-        │
-        ▼
- JSON Response
-        │
-        ▼
- LoginResponse (Kitton)
+Developer
+      │
+      ▼
+LoginRequest
+      │
+      ▼
+request.toJson()
+      │
+      ▼
+HTTP Client
+      │
+      ▼
+REST API
+      │
+      ▼
+JSON Response
+      │
+      ▼
+LoginResponse
+      │
+      ▼
+login.user.name
 ```
 
-Use **`KittonRequest`** for outgoing data and **`Kitton`** for incoming data. This separation keeps serialization predictable and clearly distinguishes request models from response models.
+---
+
+# Philosophy
+
+Kitton follows a few simple principles.
+
+- Convention over configuration.
+- Strong typing.
+- Minimal boilerplate.
+- Plain Dart models.
+- Explicit APIs.
+- No runtime magic.
+- No code generation.
+
+---
+
+# Roadmap
+
+Upcoming features:
+
+- HTTP Client (`KittonApi`)
+- Pagination support
+- API Response wrappers
+- Enum readers
+- Custom transformers
+- Validation helpers
+
+---
+
+# License
+
+MIT License.
