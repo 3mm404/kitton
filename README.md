@@ -1,28 +1,60 @@
 # Kitton
 
-Kitton is a lightweight Dart model layer for working with API data in Flutter.
+Kitton es una capa de modelos ligera y expresiva para Dart y Flutter que facilita el trabajo con APIs JSON.
 
-Helps you convert raw `Map<String, dynamic>` responses into clean, typed models — with less boilerplate and more clarity.
-
-Inspired by Laravel's Eloquent model conventions.
+Con Kitton ya no necesitas parsear manualmente `Map<String, dynamic>` en toda tu aplicación. Solo defines modelos con getters tipados y Kitton se encarga de la lectura y la serialización.
 
 ---
 
-## Features
+## ¿Por qué Kitton?
 
-- ✅ Typed value readers (`string`, `intValue`, `boolValue`, `date`, etc.)
-- ✅ Nested model parsing (`model`, `nullableModel`, `models`)
-- ✅ Safe type coercion — no crashes on `"1"` vs `1`
-- ✅ JSON serialization with `toJson` / `toRawJson`
-- ✅ Laravel-style `hidden`, `visible`, `only`, `except`, `fill`
-- ✅ No code generation required
-- ✅ No `fromJson` factory required
+Cuando consumes APIs REST, a menudo terminas con código repetitivo como:
+
+```dart
+factory User.fromJson(Map<String, dynamic> json) {
+  return User(
+    id: json['id'],
+    email: json['email'],
+  );
+}
+```
+
+o con constantes conversiones de tipos:
+
+```dart
+final id = json['id'] as int;
+final email = json['email'] as String;
+```
+
+Kitton elimina ese boilerplate.
 
 ---
 
-## Installation
+## Características
 
-Add Kitton to your `pubspec.yaml`:
+- ✅ Lectores tipados para propiedades
+- ✅ Coerción automática de valores
+- ✅ Modelos anidados
+- ✅ Modelos nulos
+- ✅ Colecciones de modelos
+- ✅ Serialización JSON recursiva
+- ✅ Atributos ocultos y visibles
+- ✅ API inspirada en Laravel Eloquent
+- ✅ Helpers de utilidad
+- ✅ Sin generación de código
+- ✅ Sin reflexión
+- ✅ Ligero y sin dependencias externas
+
+---
+
+## Instalación
+
+```yaml
+dependencies:
+  kitton: ^0.1.0
+```
+
+O si trabajas localmente:
 
 ```yaml
 dependencies:
@@ -30,161 +62,332 @@ dependencies:
     path: ../kitton
 ```
 
-Or once published to pub.dev:
-
-```yaml
-dependencies:
-  kitton: ^0.1.0
-```
-
 ---
 
-## Quick Start
+## Uso rápido
 
 ```dart
 class User extends Kitton {
   User(super.data);
 
-  int get id => intValue('id');
+  int get id => integer('id');
+  String get name => string('name');
   String get email => string('email');
-  bool get isActive => boolValue('active');
+  bool get active => boolean('active');
 }
 
 final user = User({
   'id': '1',
+  'name': 'Christian',
   'email': 'test@mail.com',
   'active': 'yes',
 });
 
-print(user.id);       // 1
-print(user.email);    // test@mail.com
-print(user.isActive); // true
+print(user.id);      // 1
+print(user.name);    // Christian
+print(user.email);   // test@mail.com
+print(user.active);  // true
+```
+
+Kitton convierte valores siempre que es posible.
+
+---
+
+## Lectores tipados
+
+Kitton ofrece lectores que manejan de forma segura:
+
+- `null`
+- valores incorrectos
+- conversiones automáticas
+- valores de respaldo opcionales
+
+| Lector | Retorno |
+|--------|---------|
+| `string()` | `String` |
+| `str()` | `String` |
+| `integer()` | `int` |
+| `intValue()` | `int` |
+| `decimal()` | `double` |
+| `doubleValue()` | `double` |
+| `numValue()` | `num` |
+| `boolean()` | `bool` |
+| `boolValue()` | `bool` |
+| `date()` | `DateTime?` |
+| `dateOr()` | `DateTime` |
+| `map()` | `Map<String, dynamic>` |
+| `list()` | `List<dynamic>` |
+| `stringList()` | `List<String>` |
+| `intList()` | `List<int>` |
+
+```dart
+int get age => integer('age');
+bool get verified => boolean('verified');
+DateTime? get birthday => date('birthday');
 ```
 
 ---
 
-## Typed Readers
+## Modelos anidados
 
-All readers accept a fallback value and handle `null` safely.
+Kitton hace que los objetos anidados sean sencillos.
 
-| Method | Returns | Notes |
-|---|---|---|
-| `string(key)` / `str(key)` | `String` | Calls `.toString()` on any value |
-| `intValue(key)` / `integer(key)` | `int` | Parses strings automatically |
-| `doubleValue(key)` / `decimal(key)` | `double` | Parses strings automatically |
-| `numValue(key)` | `num` | — |
-| `boolValue(key)` / `boolean(key)` | `bool` | Supports `true/false`, `1/0`, `"yes"/"no"`, `"on"/"off"` |
-| `date(key)` | `DateTime?` | Returns `null` if unparseable |
-| `dateOr(key, fallback)` | `DateTime` | Returns fallback if null |
-| `map(key)` | `Map<String, dynamic>` | — |
-| `list(key)` | `List<dynamic>` | — |
-| `stringList(key)` | `List<String>` | — |
-| `intList(key)` | `List<int>` | Filters out unparseable items |
-
----
-
-## Nested Models
-
-### Single model
+### Modelo simple
 
 ```dart
 class Order extends Kitton {
   Order(super.data);
 
-  User get user => model<User>('user', User.new);
+  User get customer => model(
+    'customer',
+    User.new,
+  );
 }
 ```
 
-### Nullable model
+```json
+{
+  "customer": {
+    "id": 1,
+    "name": "John"
+  }
+}
+```
 
 ```dart
-class Order extends Kitton {
-  Order(super.data);
-
-  User? get user => nullableModel<User>('user', User.new);
-}
+order.customer.name;
 ```
 
-### List of models
+### Modelo nullable
+
+```dart
+User? get customer => nullableModel(
+  'customer',
+  User.new,
+);
+```
+
+### Lista de modelos
 
 ```dart
 class Cart extends Kitton {
   Cart(super.data);
 
-  List<Product> get items => models<Product>('items', Product.new);
+  List<Product> get products => models(
+    'products',
+    Product.new,
+  );
+}
+
+cart.products.first.name;
+```
+
+---
+
+## Serialización
+
+Kitton serializa recursivamente modelos, listas y mapas.
+
+```dart
+final user = User(data);
+user.toJson();
+```
+
+Resultado:
+
+```json
+{
+  "id": 1,
+  "name": "Christian"
+}
+```
+
+### Serialización recursiva
+
+```dart
+class Order extends Kitton {
+  Order(super.data);
+
+  User get user => model(
+    'user',
+    User.new,
+  );
+}
+
+order.toJson();
+```
+
+Produce:
+
+```json
+{
+  "user": {
+    "id": 1,
+    "name": "John"
+  }
+}
+```
+
+### Listas de modelos
+
+```json
+{
+  "items": [
+    Product(...),
+    Product(...)
+  ]
+}
+```
+
+Se convierte en:
+
+```json
+{
+  "items": [
+    { "id": 1 },
+    { "id": 2 }
+  ]
+}
+```
+
+### Mapas anidados
+
+```json
+{
+  "settings": {
+    "user": User(...)
+  }
+}
+```
+
+Se convierte en:
+
+```json
+{
+  "settings": {
+    "user": {
+      "id": 1
+    }
+  }
 }
 ```
 
 ---
 
-## Serialization
+## Atributos ocultos y visibles
 
-```dart
-final user = User({'id': 1, 'email': 'a@b.com', 'password': 'secret'});
+### Hidden
 
-user.toJson();    // applies hidden / visible filters
-user.toRawJson(); // returns all fields as-is
-```
-
-### Hidden fields
+Oculta atributos sensibles durante la serialización.
 
 ```dart
 class User extends Kitton {
   User(super.data);
 
   @override
-  List<String> get hidden => ['password', 'token'];
+  List<String> get hidden => [
+    'password',
+    'remember_token',
+    'api_token',
+  ];
 }
 ```
 
-### Visible fields (whitelist)
+Salida de `toJson()`:
 
-```dart
-class User extends Kitton {
-  User(super.data);
-
-  @override
-  List<String> get visible => ['id', 'name', 'email'];
+```json
+{
+  "id": 1,
+  "email": "john@mail.com"
 }
 ```
 
----
+### Visible
 
-## Field Filtering
+Selecciona únicamente los campos que se serializan.
 
 ```dart
-final user = User({'id': 1, 'name': 'Ana', 'password': 'secret'});
+@override
+List<String> get visible => [
+  'id',
+  'name',
+  'email',
+];
+```
 
-user.only(['id', 'name']);    // {'id': 1, 'name': 'Ana'}
-user.except(['password']);    // {'id': 1, 'name': 'Ana'}
-user.fill(['id', 'name']);    // alias for only()
-user.merge({'role': 'admin'}); // {'id': 1, ..., 'role': 'admin'}
+Todo lo demás se ignora.
+
+### Serialización cruda
+
+```dart
+user.toRawJson();
+```
+
+`toRawJson()` devuelve los datos originales sin aplicar `hidden` ni `visible`.
+
+---
+
+## Comportamiento de serialización
+
+Kitton maneja de forma recursiva:
+
+- valores primitivos: `String`, `int`, `double`, `num`, `bool`, `DateTime`, `null`
+- modelos Kitton anidados
+- listas de modelos
+- mapas con valores mixtos
+
+---
+
+## Métodos útiles
+
+```dart
+user.has('email');
+user.missing('password');
+user.get('email');
+user.attr('email');
+user.isEmpty;
+user.isNotEmpty;
+```
+
+### Helpers de campos
+
+```dart
+user.only(['id', 'name']);
+user.except(['password']);
+user.fill(['id', 'name']);
+user.merge({'role': 'admin'});
 ```
 
 ---
 
-## Utility Methods
+## Filosofía
 
-```dart
-user.has('email');     // true if key exists and value is not null
-user.missing('email'); // opposite of has()
-user.get('email');     // raw dynamic value
-user.attr('email');    // alias for get()
-user.isEmpty;          // true if data map is empty
-user.isNotEmpty;       // true if data map has entries
-```
+Kitton sigue principios claros:
 
----
-
-## Philosophy
-
-- **Minimal boilerplate** — extend, declare getters, done.
-- **Convention over configuration** — sensible defaults for all readers.
-- **Explicit over magic** — no reflection, no code generation.
-- **No required `fromJson`** — just pass a `Map` to the constructor.
+- Convención sobre configuración
+- Tipado fuerte
+- Menos boilerplate
+- API explícita
+- Sin reflexión
+- Sin magia de runtime
 
 ---
 
-## License
+## Roadmap
 
-MIT
+Próximas características planeadas:
+
+- Modelos de request (`KittonRequest`)
+- Integración HTTP (`KittonApi`)
+- Wrappers de respuesta API
+- Helpers de paginación
+- Lectores para enums
+- Transformadores personalizados
+- Validaciones
+- Soporte para modelos inmutables
+
+---
+
+## Licencia
+
+MIT License

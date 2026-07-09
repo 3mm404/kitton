@@ -6,8 +6,7 @@ part 'kitton_serialization.dart';
 abstract class Kitton {
   final Map<String, dynamic> data;
 
-  Kitton(Map<String, dynamic> data)
-      : data = Map<String, dynamic>.from(data);
+  Kitton(Map<String, dynamic> data) : data = Map<String, dynamic>.from(data);
 
   List<String> get hidden => const [];
 
